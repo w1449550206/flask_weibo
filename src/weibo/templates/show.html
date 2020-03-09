@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="row">
+    <!-- 用户名 -->
+    <h3 class="col-sm-10">
+        <a href="/user/info?uid={{user.id}}">
+            <span class="text-primary">{{ user.nickname }}</span>
+        </a>
+        ：
+    </h3>
+
+    <!-- 编辑、删除链接 -->
+    {% if 'uid' in session and session['uid'] == weibo.uid %}
+    <div class="col-sm-2 text-right" style="padding-top: 20px;">
+        <a class="text-primary" href="/weibo/edit?wid={{ weibo.id }}">编辑</a>
+        <a class="text-danger" href="/weibo/delete?wid={{ weibo.id }}">删除</a>
+    </div>
+    {% endif %}
+</div>
+
+<!-- 微博内容 -->
+<div class="alert alert-info">
+    {{ weibo.content | replace('\n', '<br>') | safe }}
+</div>
+
+<!-- 微博状态 -->
+<div class="breadcrumb text-right transparent-bg">
+    <li class="active">{{ weibo.created }}</li>
+
+    <li>
+        <a class="btn btn-success btn-xs" href="/weibo/like?wid={{ weibo.id }}">
+            <span class="glyphicon glyphicon-heart"></span>
+            &nbsp;
+            <span class="badge">{{ weibo.n_like }}</span>
+        </a>
+    </li>
+</div>
+
+<hr>
+
+<!-- 评论框 -->
+<div class="col-sm-12">
+    <form class="form" action="/comment/post" method="POST">
+        <div class="form-group">
+            <label></label>
+            <div class="text-right">
+                <textarea class="form-control" name="content" rows="3" placeholder="请在此评论"></textarea>
+            </div>
+        </div>
+
+        <input type="hidden" name="wid" value="{{ weibo.id }}">
+
+        <div class="text-right">
+            <button type="submit" class="btn btn-primary btn-sm">发表评论</button>
+        </div>
+    </form>
+</div>
+
+<div>&nbsp;</div>  <!-- 占位 -->
+
+<!-- 评论内容 -->
+{% for cmt_id, cmt in comments.items() %}
+
+<div class="panel panel-default">
+    <div class="panel-heading">
+        {% if cmt.cid == 0 %}
+            <!-- 一级评论的处理 -->
+            <a href="/user/info?uid={{ cmt.uid }}">
+                <span class="text-info"">{{ cmt_users[cmt.uid] }}</span>:
+            </a>
+        {% else %}
+            <!-- 评论回复的处理 -->
+            <a href="/user/info?uid={{ cmt.uid }}">{{ cmt_users[cmt.uid] }}</a>
+            @
+            <a href="/user/info?uid={{ comments[cmt.rid].uid }}">{{ cmt_users[comments[cmt.rid].uid] }}:</a>
+
+        {% endif %}
+    </div>
+
+    <div class="panel-body">
+        <div class="col-sm-7">
+            {{ cmt.content }}
+            <br>
+            <br>
+            <div class="text-gray">{{ cmt.created }}</div>
+        </div>
+
+        <form class="form-inline col-sm-5 text-right" action="/comment/reply" method="POST">
+            <div class="form-group">
+                <input class="form-control input-sm" type="text" name="content">
+            </div>
+
+            <input type="hidden" name="wid" value="{{ cmt.wid }}">
+            <input type="hidden" name="cid" value="{{ cmt.cid or cmt.id }}">
+            <input type="hidden" name="rid" value="{{ cmt.id }}">
+
+            <button class="btn btn-info btn-sm">回复</button>
+        </form>
+    </div>
+</div>
+
+
+{% if not loop.last %}<hr>{% endif %}
+
+{% endfor %}
+
+{% endblock %}
